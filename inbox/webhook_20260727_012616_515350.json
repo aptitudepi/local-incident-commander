@@ -1,1 +1,0 @@
-{"service": "system-monitor", "event_type": "metric", "severity": "info", "payload": {"cpu_percent": 12, "memory_percent": 61.6, "disk_percent": 10, "docker_running": 2, "docker_total": 3, "load_1m": 1.24, "vllm_status": 200, "host": "promaxgb10-95c3"}, "timestamp": "2026-07-27T01:26:16.515339+00:00"}

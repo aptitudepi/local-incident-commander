@@ -1,1 +1,0 @@
-{"service": "checkout-service", "event_type": "alert", "severity": "medium", "timestamp": "2026-07-27T01:24:21Z", "payload": {"latency_ms": 4800, "p50_ms": 3100, "p99_ms": 4800, "error_rate": 5.1, "throughput_rps": 138, "threshold_ms": 2000}, "summary": "P99 latency 4800ms \u2014 still degrading, error rate climbing"}

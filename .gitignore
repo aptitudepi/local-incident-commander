@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+reports/incidents/
+reports/triage_*.json
+reports/report_*.json
+reports/tickets/
+reports/metrics/
+inbox/*.json
+logs/
+learned_rules.yaml
+runbooks/learned-*.yaml
+*.log

@@ -1,1 +1,0 @@
-{"service": "checkout-service", "event_type": "alert", "severity": "low", "timestamp": "2026-07-27T01:24:21Z", "payload": {"latency_ms": 350, "duration_seconds": 3, "auto_resolved": true}, "summary": "Transient latency 350ms \u2014 self-resolved in 3s (noise)"}

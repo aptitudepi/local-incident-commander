@@ -1,1 +1,0 @@
-{"service": "auth-service", "event_type": "alert", "severity": "critical", "timestamp": "2026-07-27T01:24:21Z", "payload": {"db_connections": 92, "max_connections": 100, "connection_wait_ms": 3400, "pool_hit_ratio": 0.72, "active_queries": 28}, "summary": "DB pool at 92/100 connections \u2014 3.4s wait time"}
