@@ -1,0 +1,41 @@
+id: security-isolate
+name: Isolate Compromised Service
+description: Isolates a service container and blocks suspicious IPs after security incident detection
+
+triggers:
+  event_types:
+    - security
+  services: []
+  severities:
+    - Critical
+
+steps:
+  - action: "docker stop {{service}}-01"
+    description: "Stop the compromised service container to prevent further access"
+    safeguards:
+      allowed_commands:
+        - docker
+      requires_approval: true
+    timeout_seconds: 10
+    verification:
+      type: command
+      command: "docker ps --filter name={{service}}-01 --format {{.Status}}"
+      expected: ""
+
+  - action: "iptables -A INPUT -s {{source_ip}} -j DROP"
+    description: "Block the originating IP address"
+    safeguards:
+      allowed_commands:
+        - iptables
+      requires_approval: true
+    timeout_seconds: 5
+    verification:
+      type: command
+      command: "iptables -L INPUT -n | grep {{source_ip}}"
+      expected: "DROP"
+
+rollback:
+  description: "Restart the service and remove IP block after investigation"
+  steps:
+    - action: "iptables -D INPUT -s {{source_ip}} -j DROP"
+    - action: "docker start {{service}}-01"

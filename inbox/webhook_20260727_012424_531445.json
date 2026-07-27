@@ -1,0 +1,1 @@
+{"service": "auth-service", "event_type": "alert", "severity": "critical", "timestamp": "2026-07-27T01:24:21Z", "payload": {"ssh_failures": 143, "source_ips": ["185.220.101.42", "91.121.89.188", "45.33.32.156"], "time_window_minutes": 5, "target_user": "root", "auth_method": "password"}, "summary": "143 SSH failures from 3 IPs in 5 minutes \u2014 brute force in progress"}

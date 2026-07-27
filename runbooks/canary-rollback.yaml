@@ -1,0 +1,42 @@
+id: canary-rollback
+name: Canary Deploy Auto-Rollback
+description: Automatically rolls back a canary deployment when error rate exceeds threshold
+
+triggers:
+  event_types:
+    - deploy
+  services: []
+  severities:
+    - High
+    - Critical
+
+steps:
+  - action: "kubectl rollout undo deployment/{{service}}-canary"
+    description: "Roll back the canary deployment to previous stable version"
+    safeguards:
+      allowed_commands:
+        - kubectl
+      requires_approval: false
+      autonomy_level_minimum: 3
+    timeout_seconds: 60
+    verification:
+      type: command
+      command: "kubectl rollout status deployment/{{service}}-canary --timeout=30s"
+      expected: "successfully rolled out"
+
+  - action: "kubectl scale deployment/{{service}}-canary --replicas=0"
+    description: "Scale canary to zero while investigation continues"
+    safeguards:
+      allowed_commands:
+        - kubectl
+      requires_approval: false
+    timeout_seconds: 30
+    verification:
+      type: command
+      command: "kubectl get deployment/{{service}}-canary -o jsonpath={.spec.replicas}"
+      expected: "0"
+
+rollback:
+  description: "Re-deploy canary after investigation"
+  steps:
+    - action: "kubectl rollout undo deployment/{{service}}-canary --to-revision={{previous_revision}}"

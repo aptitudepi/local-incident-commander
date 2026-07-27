@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LIC — At a Glance</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#0d1117; color:#e6edf3; padding:20px; }
+  h1 { color:#e94560; font-size:22px; margin-bottom:8px; }
+  .sub { color:#8b949e; font-size:13px; margin-bottom:20px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px; }
+  .card { background:#161b22; border-radius:8px; padding:16px; border-left:3px solid #e94560; }
+  .card-label { font-size:11px; text-transform:uppercase; color:#8b949e; letter-spacing:0.5px; }
+  .card-value { font-size:28px; font-weight:700; margin-top:4px; }
+  .card-value.green { color:#4caf50; }
+  .card-value.red { color:#e94560; }
+  .card-value.yellow { color:#ffc107; }
+  .card-value.blue { color:#58a6ff; }
+  .section-title { color:#e94560; font-size:14px; font-weight:600; margin:16px 0 8px; text-transform:uppercase; letter-spacing:0.5px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:8px 6px; border-bottom:1px solid #30363d; color:#8b949e; font-size:11px; text-transform:uppercase; }
+  td { padding:8px 6px; border-bottom:1px solid #21262d; }
+  .sev-critical { color:#e94560; font-weight:600; }
+  .sev-high { color:#ff6b35; font-weight:600; }
+  .sev-medium { color:#ffc107; }
+  .sev-low { color:#4caf50; }
+  .badge { display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-auto { color:#4caf50; border:1px solid #4caf50; }
+  .badge-deny { color:#e94560; border:1px solid #e94560; }
+  .badge-ok { color:#58a6ff; border:1px solid #58a6ff; }
+  .health-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin-top:12px; }
+  .health-item { background:#161b22; border-radius:6px; padding:10px; text-align:center; }
+  .health-item .status { font-size:20px; }
+  .health-item .name { font-size:11px; color:#8b949e; margin-top:4px; }
+  .footer { margin-top:24px; color:#484f58; font-size:11px; text-align:center; }
+</style>
+</head>
+<body>
+<h1>⚡ Local Incident Commander</h1>
+<div class="sub">Sovereign AI SRE · Kernel-enforced governance · Local LLM</div>
+<div class="cards" id="summary-cards"></div>
+<div class="section-title">Recent Incidents</div>
+<table id="incidents-table"><thead><tr><th>ID</th><th>Service</th><th>Severity</th><th>Score</th><th>Root Cause</th><th>Auto-Fix</th><th>Status</th></tr></thead><tbody id="incidents-body"></tbody></table>
+<div class="section-title">OpenClaw Policy Denials</div>
+<table id="denials-table"><thead><tr><th>Time</th><th>Action</th><th>Policy ID</th><th>Reason</th></tr></thead><tbody id="denials-body"></tbody></table>
+<div class="section-title">System Health</div>
+<div class="health-row" id="health-row"></div>
+<div class="footer">LIC · localhost:8081 · Refreshes every 5s · Dell x NVIDIA GB10</div>
+<script>
+async function load() {
+  try {
+    const [incRes, costRes, healthRes] = await Promise.all([
+      fetch('/api/incidents').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/costs').then(r=>r.json()).catch(()=>({})),
+      fetch('/api/health/system').then(r=>r.json()).catch(()=>({}))
+    ]);
+    const incidents = Array.isArray(incRes) ? incRes : incRes.incidents || [];
+    const costs = costRes;
+    const health = healthRes;
+
+    // Summary cards
+    const total = incidents.length;
+    const critical = incidents.filter(i => (i.severity||'').toLowerCase()==='critical').length;
+    const savings = costs.total_saved || 0;
+    const blocked = costs.total_actions_blocked || 0;
+    document.getElementById('summary-cards').innerHTML = `
+      <div class="card"><div class="card-label">Total Incidents</div><div class="card-value blue">${total}</div></div>
+      <div class="card"><div class="card-label">Critical</div><div class="card-value red">${critical}</div></div>
+      <div class="card"><div class="card-label">Total Savings</div><div class="card-value green">$${Number(savings).toLocaleString()}</div></div>
+      <div class="card"><div class="card-label">Actions Blocked</div><div class="card-value yellow">${blocked}</div></div>
+    `;
+
+    // Incidents table
+    const tbody = document.getElementById('incidents-body');
+    if (incidents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#484f58;padding:20px;">No incidents yet. Inject alerts via POST /webhook</td></tr>';
+    } else {
+      tbody.innerHTML = incidents.slice(0,20).map(i => {
+        const sev = (i.severity||'low').toLowerCase();
+        const sevCls = 'sev-'+sev;
+        const fix = i.auto_fix || i.auto_fix_command || '—';
+        const status = i.remediation_status || i.status || 'open';
+        const rc = (i.probable_root_cause || i.root_cause || i.summary || '—').substring(0,80);
+        const score = i.score !== undefined && i.score !== null ? i.score : '—';
+        const badge = status === 'verified' ? '<span class="badge badge-ok">verified</span>'
+          : status.includes('blocked') ? '<span class="badge badge-deny">blocked</span>'
+          : '<span class="badge">'+status+'</span>';
+        return `<tr><td>${i.incident_id||'?'}</td><td>${i.service||'?'}</td><td class="${sevCls}">${i.severity||'?'}</td><td>${score}</td><td>${rc}</td><td><code>${fix}</code></td><td>${badge}</td></tr>`;
+      }).join('');
+    }
+
+    // Denials
+    const denialsBody = document.getElementById('denials-body');
+    const blockedList = costs.blocked_actions || [];
+    if (blockedList.length === 0) {
+      denialsBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#484f58;padding:20px;">No policy denials recorded.</td></tr>';
+    } else {
+      denialsBody.innerHTML = blockedList.slice(-10).reverse().map(b => {
+        const ts = (b.timestamp||'').substring(11,19) || '—';
+        return `<tr><td>${ts}</td><td>${b.action||'?'}</td><td><code>${b.policy_id||'?'}</code></td><td>${(b.reason||'').substring(0,80)}</td></tr>`;
+      }).join('');
+    }
+
+    // Health
+    const healthRow = document.getElementById('health-row');
+    const v = health.vllm || {};
+    const m = health.model || {};
+    const o = health.openclaw || {};
+    const d = health.docker || {};
+    const a = health.api || {};
+    const hItems = [
+      {name:'API',status:a.status==='ok'?'✓':'✗'},
+      {name:'vLLM',status:v.running?'✓':'✗'},
+      {name:'Model',status:m.loaded?'✓':'✗'},
+      {name:'OpenClaw',status:o.available?'✓':'✗'},
+      {name:'Docker',status:d.available?'✓':'✗'},
+    ];
+    healthRow.innerHTML = hItems.map(h => `<div class="health-item"><div class="status" style="color:${h.status==='✓'?'#4caf50':'#e94560'}">${h.status}</div><div class="name">${h.name}</div></div>`).join('');
+  } catch(e) {
+    console.error(e);
+  }
+}
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+rules: []
+suggestions:
+- action: restart
+  autonomy_level: 2
+  event_types: alert
+  last_incident_id: INC-9BEB21B6
+  occurrences: 2
+  pattern_key: auth-service:alert
+  profile: hardened
+  score_threshold: 0
+  service: auth-service
+  suggested_rule:
+    if: service is 'auth-service' and severity is 'Critical'
+    policy_id: learned-auth-ser
+    require_human_approval: true
+    then: recommend action 'restart'

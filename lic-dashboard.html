@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Local Incident Commander</title>
+<style>
+  /* ============================================================
+     LOCAL INCIDENT COMMANDER — demo dashboard
+     Offline-first: system fonts only, no network requests.
+     Palette is meaning-driven: severity hues carry information,
+     green = local/healthy/contained, red = incident/blocked.
+     ============================================================ */
+  :root{
+    --bg:#0A0D13; --panel:#121722; --panel2:#1A2130; --line:#232C3D;
+    --hi:#E8EDF5; --mid:#93A0B4; --dim:#5A6678;
+    --ok:#86C232; --active:#4D8DF0;
+    --crit:#FF3B4E; --high:#FF8A3D; --med:#FFD23D; --low:#3DD6C4;
+    --mono:ui-monospace,"JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    --ease:cubic-bezier(.2,.9,.28,1.15);
+    --elev:0 1px 0 rgba(255,255,255,.04) inset, 0 4px 14px -4px rgba(0,0,0,.55), 0 18px 40px -18px rgba(0,0,0,.6);
+    --rim:0 0 0 1px rgba(77,141,240,.05) inset;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(900px 500px at 82% -12%, rgba(77,141,240,.10), transparent 60%),
+      radial-gradient(700px 520px at 6% 110%, rgba(134,194,50,.05), transparent 55%),
+      radial-gradient(1100px 700px at 50% 45%, rgba(26,33,48,.35), transparent 72%),
+      var(--bg);
+    color:var(--hi); font-family:var(--sans);
+    font-size:14px; line-height:1.45; overflow:hidden;
+  }
+  /* grain overlay — inline SVG noise, fully offline, for surface depth */
+  .grain{position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .app{display:flex; flex-direction:column; height:100vh; padding:14px; gap:12px; position:relative; z-index:1}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; gap:18px;
+    border:1px solid var(--line); background:var(--panel);
+    border-radius:12px; padding:12px 18px;
+  }
+  .brand{display:flex; align-items:center; gap:12px; min-width:280px}
+  .brand .mark{
+    width:34px;height:34px;border-radius:8px;flex:none;
+    background:linear-gradient(135deg,#1c2636,#0e1420);
+    border:1px solid var(--line);
+    display:grid;place-items:center; position:relative;
+  }
+  .brand .mark::before{content:"";width:12px;height:12px;border-radius:50%;
+    background:var(--ok); box-shadow:0 0 12px var(--ok); animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+  .brand h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0;font-weight:700}
+  .brand small{display:block;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.18em;margin-top:2px}
+
+  .status{display:flex;gap:8px;flex:1;flex-wrap:wrap}
+  .pill{
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+    color:var(--mid);display:flex;align-items:center;gap:7px;background:var(--panel2)
+  }
+  .pill b{color:var(--ok);font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+
+  .controls{display:flex;gap:8px;align-items:center}
+  .clock{font-family:var(--mono);font-size:12px;color:var(--mid);letter-spacing:.06em;margin-right:6px}
+  button{
+    font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+    border-radius:8px;padding:8px 16px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--hi);
+    transition:transform .18s var(--ease),border-color .18s ease,background .18s ease,color .18s ease;
+  }
+  button:hover{border-color:var(--active);color:#fff;transform:translateY(-1px)}
+  button:active{transform:translateY(1px) scale(.98)}
+  button:focus-visible{outline:none;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--active)}
+  button.primary{background:var(--active);border-color:var(--active);color:#fff}
+  button.primary:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.ghost{background:transparent}
+
+  /* ---------- body grid ---------- */
+  .grid{display:grid;grid-template-columns:0.9fr 1.5fr 1.1fr;gap:12px;flex:1;min-height:0}
+  .col{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .card{
+    border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),#0f141d);border-radius:12px;
+    display:flex;flex-direction:column;min-height:0;overflow:hidden;
+    box-shadow:var(--elev),var(--rim)
+  }
+  .card > .head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-bottom:1px solid var(--line);flex:none
+  }
+  .card > .head h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin:0;color:var(--mid);font-weight:700}
+  .card > .head .count{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .body{padding:12px 14px;overflow:auto;flex:1;min-height:0}
+  .body::-webkit-scrollbar{width:8px}
+  .body::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+  /* ---------- signal feed ---------- */
+  .signal{
+    border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:8px;
+    background:var(--panel2);opacity:0;transform:translateY(6px);
+    animation:slidein .35s forwards
+  }
+  @keyframes slidein{to{opacity:1;transform:none}}
+  .signal.correlated{border-color:var(--active);box-shadow:0 0 0 1px rgba(77,141,240,.35) inset}
+  .signal.noise{opacity:.55}
+  .signal .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+  .signal .svc{font-family:var(--mono);font-size:12px;color:var(--hi);font-weight:600}
+  .signal .ts{font-family:var(--mono);font-size:10px;color:var(--dim)}
+  .signal .detail{font-size:12px;color:var(--mid)}
+  .tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    padding:2px 6px;border-radius:4px;border:1px solid var(--line);color:var(--dim)}
+  .tag.link{color:var(--active);border-color:var(--active)}
+
+  .empty{color:var(--dim);font-family:var(--mono);font-size:12px;text-align:center;padding:30px 10px}
+
+  /* ---------- incident ---------- */
+  .sev{
+    display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);
+    font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+    padding:7px 14px;border-radius:8px;border:1px solid;
+  }
+  .sev .sq{width:11px;height:11px;border-radius:3px}
+  .sev[data-s="Critical"]{color:var(--crit);border-color:var(--crit);background:rgba(255,59,78,.08)}
+  .sev[data-s="Critical"] .sq{background:var(--crit);box-shadow:0 0 10px var(--crit)}
+  .sev[data-s="High"]{color:var(--high);border-color:var(--high);background:rgba(255,138,61,.08)}
+  .sev[data-s="High"] .sq{background:var(--high)}
+  .sev[data-s="Medium"]{color:var(--med);border-color:var(--med);background:rgba(255,210,61,.07)}
+  .sev[data-s="Medium"] .sq{background:var(--med)}
+  .sev[data-s="Low"]{color:var(--low);border-color:var(--low);background:rgba(61,214,196,.07)}
+  .sev[data-s="Low"] .sq{background:var(--low)}
+
+  .inc-id{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.05em}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+  .fork{
+    display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;
+    padding:8px 12px;border-radius:8px;border:1px dashed var(--line);color:var(--mid);
+    margin-bottom:14px;letter-spacing:.04em
+  }
+  .fork b{color:var(--crit)}
+  .fork .arrow{color:var(--dim)}
+  .lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 6px;font-weight:700}
+  .rootcause{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--crit);
+    border-radius:8px;padding:11px 13px;margin-bottom:14px;font-size:13px}
+  .evidence{list-style:none;padding:0;margin:0 0 14px}
+  .evidence li{font-family:var(--mono);font-size:11.5px;color:var(--mid);padding:5px 0;border-bottom:1px solid var(--line)}
+  .evidence li:last-child{border:0}
+  .evidence li::before{content:"▪";color:var(--active);margin-right:8px}
+  .brief{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--active);border-radius:8px;padding:14px 16px;
+    font-family:var(--serif);font-size:15px;line-height:1.7;color:#DCE4F0;min-height:60px;white-space:pre-wrap}
+  .brief .cursor{display:inline-block;width:8px;height:15px;background:var(--active);
+    vertical-align:-2px;animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .brief-meta{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:8px;letter-spacing:.06em}
+
+  /* ---------- action / policy gate ---------- */
+  .action{border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--panel2);margin-bottom:12px}
+  .action .name{font-family:var(--mono);font-size:13px;color:var(--hi);margin-bottom:4px}
+  .action .req{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--high)}
+
+  .gate{
+    border-radius:10px;border:1px solid var(--line);padding:14px;background:var(--panel2);
+    text-align:center;transition:.3s;margin-bottom:12px
+  }
+  .gate .state{font-family:var(--mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--dim)}
+  .gate .why{font-family:var(--mono);font-size:11px;color:var(--mid);margin-top:6px;line-height:1.5}
+  .gate .pid{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:8px;letter-spacing:.05em}
+  .gate.blocked{
+    border-color:var(--crit);background:rgba(255,59,78,.09);
+    box-shadow:0 0 0 1px var(--crit) inset, 0 0 30px rgba(255,59,78,.15);
+    animation:lockdown .5s ease
+  }
+  .gate.blocked .state{color:var(--crit)}
+  .gate.approved{border-color:var(--ok);background:rgba(134,194,50,.08)}
+  .gate.approved .state{color:var(--ok)}
+  @keyframes lockdown{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+  .gate-actions{display:flex;gap:8px}
+  .gate-actions button{flex:1}
+  button.approve{border-color:var(--ok);color:var(--ok)}
+  button.approve:hover{background:var(--ok);color:#0A0D13}
+  button.deny{border-color:var(--crit);color:var(--crit)}
+  button.deny:hover{background:var(--crit);color:#fff}
+
+  /* ---------- audit ---------- */
+  .audit .body{padding:8px 12px}
+  .log{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--mid);
+    opacity:0;animation:slidein .3s forwards;display:flex;gap:8px}
+  .log .t{color:var(--dim);flex:none}
+  .log.crit{color:var(--crit)}
+  .log.ok{color:var(--ok)}
+  .log.act{color:var(--active)}
+
+  @media (max-width:1050px){
+    body{overflow:auto}.app{height:auto}
+    .grid{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<canvas id="stars"></canvas>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <div class="mark"></div>
+      <div><h1>Local Incident Commander</h1><small>OFFLINE SRE TRIAGE · GB10</small></div>
+    </div>
+    <div class="status">
+      <span class="pill"><span class="dot"></span><b>LOCAL</b></span>
+      <span class="pill">CLOUD CALLS&nbsp;<b>0</b></span>
+      <span class="pill">MODEL&nbsp;<b id="model">nemotron-local</b></span>
+      <span class="pill">SANDBOX&nbsp;<b id="profile">hardened</b></span>
+    </div>
+    <div class="controls">
+      <span class="clock" id="clock">--:--:--</span>
+      <button class="primary" id="run">▶ Run incident</button>
+      <button class="ghost" id="reset">Reset</button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- SIGNAL FEED -->
+    <div class="col">
+      <div class="card" style="flex:1">
+        <div class="head"><h2>Signal Feed · inbox/</h2><span class="count" id="sigcount">0 signals</span></div>
+        <div class="body" id="feed"><div class="empty">watching inbox/ …</div></div>
+      </div>
+    </div>
+
+    <!-- ACTIVE INCIDENT -->
+    <div class="col">
+      <div class="card" style="flex:1">
+        <div class="head"><h2>Active Incident</h2><span class="count" id="incid">—</span></div>
+        <div class="body" id="incident"><div class="empty">no active incident</div></div>
+      </div>
+    </div>
+
+    <!-- ACTION + POLICY + AUDIT -->
+    <div class="col">
+      <div class="card">
+        <div class="head"><h2>Action &amp; Policy Gate</h2></div>
+        <div class="body" id="gatebox"><div class="empty">awaiting recommendation</div></div>
+      </div>
+      <div class="card audit" style="flex:1">
+        <div class="head"><h2>Audit Trail</h2><span class="count" id="logcount">0</span></div>
+        <div class="body" id="log"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MOCK DATA — matches the JSON contract your backend (cli.py)
+   emits. All data is synthetic/fictitious per the constraint.
+   >> INTEGRATION: replace loadIncident() below with a fetch()
+      that polls reports/incident.json + reports/decision.json.
+   ============================================================ */
+const MOCK = {
+  signals:[
+    {service:"checkout-service", type:"alert",  ts:"10:42:11", detail:"p99 latency 180ms → 2.4s", related:true},
+    {service:"checkout-service", type:"alert",  ts:"10:42:19", detail:"DB conn pool exhausted (100/100)", related:true},
+    {service:"checkout-service", type:"deploy", ts:"10:37:04", detail:"release v4.7.2 rolled out", related:true},
+    {service:"email-digest-worker", type:"alert", ts:"10:41:50", detail:"queue depth +12% (nightly batch)", related:false} // NOISE — must NOT correlate
+  ],
+  incident:{
+    incident_id:"INC-2F9A41",
+    severity:"Critical",
+    correlated_events:["checkout-service alert","checkout-service alert","checkout-service deploy"],
+    probable_root_cause:"Deployment v4.7.2 (10:37) introduced a connection-pool regression; latency + pool exhaustion on checkout-service began <5 min later.",
+    evidence:[
+      "2 alerts on same service within 8s window",
+      "deploy event 5m07s before first alert",
+      "no correlation to email-digest-worker (different service, batch cause)"
+    ],
+    recommended_action:"Roll back checkout-service to v4.7.1",
+    requires_human_approval:true
+  },
+  brief:"checkout-service is in a customer-facing latency regression. p99 jumped 13× and the DB connection pool is fully exhausted, both starting within five minutes of deploy v4.7.2. The unrelated email-digest-worker alert is a nightly batch and was excluded. Recommended remediation: roll back to v4.7.1. This action is gated — it requires human approval before execution.",
+  decision:{ // OpenShell policy decision — hardened profile
+    allowed:false,
+    decision:"BLOCKED",
+    policy_id:"openshell.hardened.net-egress.default-deny",
+    reason:"Rollback requires an outbound deploy-API call. Hardened policy denies all egress by default; no approved rule for this action.",
+    requires_human_approval:true
+  }
+};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), feed=$("#feed"), inc=$("#incident"),
+      gate=$("#gatebox"), logEl=$("#log");
+let logN=0, sigN=0;
+function stamp(){return new Date().toLocaleTimeString('en-GB')}
+function log(msg,cls=""){
+  const d=document.createElement("div"); d.className="log "+cls;
+  d.innerHTML=`<span class="t">${stamp()}</span><span>${msg}</span>`;
+  logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight;
+  $("#logcount").textContent=++logN;
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* live clock (uptime / always-on proof) */
+setInterval(()=>{$("#clock").textContent=stamp()},1000);
+
+/* ---------- the demo sequence (mirrors DEMO_SCRIPT beats) ---------- */
+async function loadIncident(){ return MOCK; } // <<< swap for fetch() on GB10
+
+let running=false;
+async function run(){
+  if(running) return; running=true; reset(true);
+  $("#run").disabled=true;
+  const data=await loadIncident();
+
+  // BEAT 1 — signals arrive
+  log("watcher: inbox/ change detected","act");
+  feed.innerHTML="";
+  for(const s of data.signals){
+    const el=document.createElement("div");
+    el.className="signal"+(s.related?"":" noise");
+    el.dataset.svc=s.service;
+    el.innerHTML=`<div class="top"><span class="svc">${s.service}</span><span class="ts">${s.ts}</span></div>
+      <div class="detail">${s.detail}</div>
+      <div style="margin-top:6px"><span class="tag">${s.type}</span></div>`;
+    feed.appendChild(el);
+    $("#sigcount").textContent=`${++sigN} signals`;
+    await wait(700);
+  }
+  log(`watcher: ${data.signals.length} signals ingested`);
+  await wait(600);
+
+  // BEAT 2 — correlation (related link, noise excluded)
+  log("correlator: grouping by service + time window","act");
+  document.querySelectorAll(".signal").forEach(el=>{
+    if(el.classList.contains("noise")){
+      el.querySelector(".tag").outerHTML=`<span class="tag">excluded · noise</span>`;
+    }else{
+      el.classList.add("correlated");
+      el.querySelector(".tag").outerHTML=`<span class="tag link">↳ INC-2F9A41</span>`;
+    }
+  });
+  log("correlator: 3 events → 1 incident · 1 excluded","ok");
+  await wait(700);
+
+  // BEAT 3+4 — incident card + severity + brief
+  const i=data.incident;
+  $("#incid").textContent=i.incident_id;
+  inc.innerHTML=`
+    <div class="row">
+      <span class="sev" data-s="${i.severity}"><span class="sq"></span>${i.severity}</span>
+      <span class="inc-id">${i.incident_id}</span>
+    </div>
+    <div class="fork">SEVERITY ${i.severity} <span class="arrow">→</span> auto-remediation <b>DISABLED</b> <span class="arrow">→</span> escalated · action gated</div>
+    <p class="lbl">Probable root cause</p>
+    <div class="rootcause">${i.probable_root_cause}</div>
+    <p class="lbl">Evidence</p>
+    <ul class="evidence">${i.evidence.map(e=>`<li>${e}</li>`).join("")}</ul>
+    <p class="lbl">Executive brief · <span style="color:var(--active)">nemotron /think</span></p>
+    <div class="brief" id="brief"><span class="cursor"></span></div>
+    <div class="brief-meta" id="bmeta"></div>`;
+  log("severity: classified CRITICAL","crit");
+  await wait(500);
+
+  // type out the brief
+  const b=$("#brief"); b.innerHTML="";
+  for(const ch of data.brief){ b.textContent+=ch; await wait(12); }
+  $("#bmeta").textContent="generated locally · 0 cloud calls · 1.2s";
+  log("llm_brief: executive brief synthesized (local)","ok");
+  await wait(500);
+
+  // BEAT 5 — action attempt → policy gate → BLOCK
+  const d=data.decision;
+  gate.innerHTML=`
+    <div class="action">
+      <div class="name">▶ ${i.recommended_action}</div>
+      <div class="req">requires human approval</div>
+    </div>
+    <div class="gate" id="gstate"><div class="state" id="gtext">evaluating…</div><div class="why" id="gwhy"></div><div class="pid" id="gpid"></div></div>
+    <div class="gate-actions" id="gacts"></div>`;
+  log("agent: attempting remediation → openshell","act");
+  await wait(1100);
+
+  const g=$("#gstate");
+  g.classList.add("blocked");
+  $("#gtext").textContent="⛔ BLOCKED";
+  $("#gwhy").textContent=d.reason;
+  $("#gpid").textContent="policy_id: "+d.policy_id;
+  log("openshell: EGRESS DENIED — "+d.policy_id,"crit");
+  log("gate: awaiting human decision","act");
+
+  // human decision controls
+  $("#gacts").innerHTML=`<button class="approve" id="ap">Approve rollback</button><button class="deny" id="dn">Deny</button>`;
+  $("#ap").onclick=()=>{ g.className="gate approved"; $("#gtext").textContent="✓ APPROVED";
+    $("#gwhy").textContent="Human approved. Executing rollback under scoped, audited policy exception.";
+    $("#gpid").textContent="approved_by: on-call operator";
+    $("#gacts").innerHTML=""; log("human: APPROVED rollback → executing","ok"); };
+  $("#dn").onclick=()=>{ g.className="gate"; $("#gtext").textContent="✕ DENIED";
+    $("#gwhy").textContent="Human denied. No action taken. Incident stays open for investigation.";
+    $("#gacts").innerHTML=""; log("human: DENIED — no action taken","act"); };
+
+  $("#run").disabled=false; running=false;
+}
+
+/* ---------- reset ---------- */
+function reset(keepLog){
+  sigN=0; if(!keepLog){logN=0;$("#logcount").textContent=0;logEl.innerHTML="";}
+  feed.innerHTML='<div class="empty">watching inbox/ …</div>';
+  inc.innerHTML='<div class="empty">no active incident</div>';
+  gate.innerHTML='<div class="empty">awaiting recommendation</div>';
+  $("#sigcount").textContent="0 signals"; $("#incid").textContent="—";
+}
+
+$("#run").onclick=run;
+$("#reset").onclick=()=>{running=false;reset(false);log("system: reset — watching inbox/");};
+log("system: online · hardened sandbox · watching inbox/","ok");
+
+/* ---------- ambient starfield (galaxy-style, offline canvas, kept subtle) ---------- */
+(function(){
+  const c=document.getElementById("stars"); if(!c) return;
+  const x=c.getContext("2d"); let w,h,stars;
+  const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function init(){ w=c.width=innerWidth; h=c.height=innerHeight;
+    stars=Array.from({length:Math.min(130,Math.floor(w*h/13000))},()=>({
+      x:Math.random()*w, y:Math.random()*h, z:Math.random()*.8+.2,
+      r:Math.random()*1.2+.3, tw:Math.random()*Math.PI*2})); }
+  function draw(){
+    x.clearRect(0,0,w,h);
+    for(const s of stars){
+      if(!reduce){ s.y+=s.z*.10; if(s.y>h)s.y=0; s.tw+=.018; }
+      const a=.18+Math.sin(s.tw)*.16*s.z;
+      x.beginPath(); x.arc(s.x,s.y,s.r*s.z,0,7);
+      x.fillStyle="rgba(150,180,230,"+a.toFixed(3)+")"; x.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  addEventListener("resize",init); init(); requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

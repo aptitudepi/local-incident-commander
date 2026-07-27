@@ -1,0 +1,54 @@
+{
+  "incident_id": "INC-9BEB21B6",
+  "service": "auth-service",
+  "severity": "Critical",
+  "status": "open",
+  "timestamp": "2026-07-27T01:25:54.324576+00:00",
+  "correlated_events": [
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012423_511917.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] db_connections=92 max_connections=100 connection_wait_ms=3400 pool_hit_ratio=0.72 active_queries=28"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012424_022867.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] db_connections=97 max_connections=100 connection_wait_ms=5800 pool_hit_ratio=0.65 active_queries=31"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012424_531445.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] ssh_failures=143 source_ips=['185.220.101.42', '91.121.89.188', '45.33.32.156'] time_window_minutes=5 target_user=root auth_method=password"
+    }
+  ],
+  "event_count": 3,
+  "probable_root_cause": "Suspicious access pattern detected on auth-service. Possible brute force attack.",
+  "evidence": [
+    {
+      "metric": "db_connections",
+      "value": 92,
+      "source": "inbox/webhook_20260727_012423_511917.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "db_connections",
+      "value": 97,
+      "source": "inbox/webhook_20260727_012424_022867.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    }
+  ],
+  "recommended_action": "Isolate auth-service container, block originating IPs, investigate auth logs.",
+  "auto_fix_command": "docker restart auth-service-01",
+  "manual_fix_command": "Isolate auth-service container, block originating IPs, investigate auth logs.",
+  "score": -1,
+  "auto_remediate": false,
+  "remediation_status": "blocked_by_safeguards",
+  "requires_human_approval": true,
+  "autonomy_level": 2,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": null
+}

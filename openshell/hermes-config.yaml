@@ -1,0 +1,14 @@
+version: "1.0"
+name: "lic-hermes-config"
+description: "Hermes inference backend configuration for Local Incident Commander"
+
+inference:
+  backend: vllm
+  vllm:
+    model: /home/dell/repos/Qwen3.6-35B-A3B-NVFP4
+    trust_remote_code: true
+    max_model_len: 32768
+    gpu_memory_utilization: 0.90
+    served_model_name: qwen
+    quantization: modelopt
+  endpoint: http://localhost:8000/v1

@@ -1,0 +1,90 @@
+{
+  "incident_id": "INC-409702BD",
+  "service": "checkout-service",
+  "severity": "Critical",
+  "status": "open",
+  "timestamp": "2026-07-27T01:24:53.441661+00:00",
+  "correlated_events": [
+    {
+      "event_type": "deploy",
+      "source": "inbox/webhook_20260727_012421_472723.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[deploy] version=v2.1.3-rc2 deployer=ci-bot duration_seconds=47 changed_files=['payment_gateway.py', 'checkout_handler.py', 'inventory_client.py'] canary_percent=100"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012421_985138.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] latency_ms=5200 p50_ms=3400 p99_ms=5200 error_rate=7.2 throughput_rps=142 threshold_ms=2000"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012422_493468.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] latency_ms=4800 p50_ms=3100 p99_ms=4800 error_rate=5.1 throughput_rps=138 threshold_ms=2000"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012423_003035.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] error_rate=12.3 http_500_count=47 endpoint=/checkout/submit deploy_version=v2.1.3-rc2"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012425_550533.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] latency_ms=350 duration_seconds=3 auto_resolved=True"
+    }
+  ],
+  "event_count": 5,
+  "probable_root_cause": "Recent deployment vv2.1.3-rc2 to checkout-service likely introduced a regression causing resource exhaustion.",
+  "evidence": [
+    {
+      "metric": "latency_ms",
+      "value": 5200,
+      "source": "inbox/webhook_20260727_012421_985138.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "error_rate",
+      "value": 7.2,
+      "source": "inbox/webhook_20260727_012421_985138.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "latency_ms",
+      "value": 4800,
+      "source": "inbox/webhook_20260727_012422_493468.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "error_rate",
+      "value": 5.1,
+      "source": "inbox/webhook_20260727_012422_493468.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "error_rate",
+      "value": 12.3,
+      "source": "inbox/webhook_20260727_012423_003035.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    },
+    {
+      "metric": "latency_ms",
+      "value": 350,
+      "source": "inbox/webhook_20260727_012425_550533.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    }
+  ],
+  "recommended_action": "Roll back deployment to vv2.1.3-rc2 on checkout-service and monitor.",
+  "auto_fix_command": "docker restart checkout-service-01",
+  "manual_fix_command": "Roll back deployment to vv2.1.3-rc2 on checkout-service and monitor.",
+  "score": 4,
+  "auto_remediate": true,
+  "remediation_status": "blocked_by_safeguards",
+  "requires_human_approval": true,
+  "autonomy_level": 3,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": null
+}

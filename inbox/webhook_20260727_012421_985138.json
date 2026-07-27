@@ -1,0 +1,1 @@
+{"service": "checkout-service", "event_type": "alert", "severity": "high", "timestamp": "2026-07-27T01:24:21Z", "payload": {"latency_ms": 5200, "p50_ms": 3400, "p99_ms": 5200, "error_rate": 7.2, "throughput_rps": 142, "threshold_ms": 2000}, "summary": "P99 latency 5200ms (threshold 2000ms) \u2014 5-second degradation"}

@@ -1,0 +1,29 @@
+version: "1.0"
+name: "lic-insecure"
+description: "Insecure sandbox policy for Local Incident Commander demo contrast"
+
+sandbox:
+  filesystem:
+    read_write:
+      - /home/dell/repos/local-incident-commander
+    denied: []
+
+  network:
+    default_deny: false
+    allowed_egress:
+      - host: "*"
+        port: "*"
+    allowed_ingress:
+      - host: "*"
+        port: "*"
+
+  process:
+    run_as_user: "root"
+    run_as_group: "root"
+    allowed_binaries: []
+    denied_binaries: []
+
+  inference:
+    routing_endpoint: http://localhost:8000/v1
+    allowed_models:
+      - qwen

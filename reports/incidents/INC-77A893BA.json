@@ -1,0 +1,36 @@
+{
+  "incident_id": "INC-77A893BA",
+  "service": "inventory-service",
+  "severity": "High",
+  "status": "open",
+  "timestamp": "2026-07-27T01:26:14.970095+00:00",
+  "correlated_events": [
+    {
+      "event_type": "alert",
+      "source": "inbox/webhook_20260727_012425_040338.json",
+      "timestamp": "2026-07-27T01:24:21Z",
+      "summary": "[alert] cpu_percent=94 memory_mb=2800 disk_iops=4200 thread_count=89 gc_pause_ms=1200"
+    }
+  ],
+  "event_count": 1,
+  "probable_root_cause": "CPU saturation on inventory-service likely due to traffic spike or inefficient query.",
+  "evidence": [
+    {
+      "metric": "cpu_percent",
+      "value": 94,
+      "source": "inbox/webhook_20260727_012425_040338.json",
+      "timestamp": "2026-07-27T01:24:21Z"
+    }
+  ],
+  "recommended_action": "Restart inventory-service to clear CPU spike and investigate root cause.",
+  "auto_fix_command": "docker restart inventory-service-01",
+  "manual_fix_command": "Restart inventory-service to clear CPU spike and investigate root cause.",
+  "score": 4,
+  "auto_remediate": true,
+  "remediation_status": "blocked_by_safeguards",
+  "requires_human_approval": true,
+  "autonomy_level": 3,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": null
+}

@@ -1,0 +1,22 @@
+{
+  "incident_id": "INC-629E8964",
+  "service": "checkout-service",
+  "severity": "High",
+  "status": "execution_failed",
+  "score": 4,
+  "auto_remediate": true,
+  "auto_fix": "docker restart checkout-service-01",
+  "manual_fix": "Scale database connection pool for checkout-service.",
+  "root_cause": "Database connection pool exhaustion on checkout-service causing cascading latency increases.",
+  "timestamp": "2026-07-27T01:24:28.297147+00:00",
+  "remediation_status": "execution_failed",
+  "policy_decision": {
+    "allowed": true,
+    "decision": "allowed",
+    "policy_id": "policy-default",
+    "reason": "Action 'docker' on 'checkout-service' allowed by default policy.",
+    "requires_human_approval": false,
+    "dry_run": false,
+    "safeguards_checked": true
+  }
+}

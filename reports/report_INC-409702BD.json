@@ -1,0 +1,14 @@
+{
+  "incident_id": "INC-409702BD",
+  "service": "checkout-service",
+  "severity": "Critical",
+  "status": "blocked_by_safeguards",
+  "score": 4,
+  "auto_remediate": true,
+  "auto_fix": "docker restart checkout-service-01",
+  "manual_fix": "Roll back deployment to vv2.1.3-rc2 on checkout-service and monitor.",
+  "root_cause": "Recent deployment vv2.1.3-rc2 to checkout-service likely introduced a regression causing resource exhaustion.",
+  "timestamp": "2026-07-27T01:24:53.441661+00:00",
+  "remediation_status": "blocked_by_safeguards",
+  "policy_decision": null
+}

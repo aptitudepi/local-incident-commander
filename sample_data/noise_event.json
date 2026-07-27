@@ -1,0 +1,14 @@
+{
+  "service": "notification-service",
+  "event_type": "log",
+  "severity": "info",
+  "timestamp": "2026-07-26T14:15:00Z",
+  "payload": {
+    "message": "Scheduled daily email batch completed successfully",
+    "emails_sent": 12450,
+    "batch_duration_seconds": 32,
+    "error_count": 0
+  },
+  "source": "notification-service",
+  "description": "Routine notification batch job completed without errors"
+}

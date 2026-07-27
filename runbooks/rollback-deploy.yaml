@@ -1,0 +1,30 @@
+id: rollback-deploy
+name: Roll Back Deployment
+description: Rolls back a recent deployment when correlated with alerts
+
+triggers:
+  event_types:
+    - deploy
+  services: []
+  severities:
+    - Medium
+    - High
+    - Critical
+
+steps:
+  - action: "kubectl rollout undo deployment/{{service}}"
+    description: "Rollback the most recent deployment"
+    safeguards:
+      allowed_commands:
+        - kubectl
+      requires_approval: true
+    timeout_seconds: 60
+    verification:
+      type: command
+      command: "kubectl rollout status deployment/{{service}} --timeout=30s"
+      expected: "successfully rolled out"
+
+rollback:
+  description: "If rollback fails, re-attempt with previous revision"
+  steps:
+    - action: "kubectl rollout undo deployment/{{service}} --to-revision={{revision-1}}"

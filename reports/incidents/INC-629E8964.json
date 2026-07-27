@@ -1,0 +1,86 @@
+{
+  "incident_id": "INC-629E8964",
+  "service": "checkout-service",
+  "severity": "High",
+  "status": "open",
+  "timestamp": "2026-07-27T01:24:28.297147+00:00",
+  "correlated_events": [
+    {
+      "event_type": "alert",
+      "source": "inbox/alert_api_latency.json",
+      "timestamp": "2026-07-26T15:30:00Z",
+      "summary": "[alert] latency_ms=1200 error_rate=8.5 endpoint=/api/checkout p99_latency_ms=1200 p50_latency_ms=450 request_count=1500 threshold_exceeded=p99_latency > 500ms"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/alert_db_pool.json",
+      "timestamp": "2026-07-26T15:31:00Z",
+      "summary": "[alert] db_connections=95 db_connection_limit=100 db_query_latency_ms=850 db_pool_exhaustion=True host=db-primary-01"
+    },
+    {
+      "event_type": "alert",
+      "source": "inbox/alert_cpu_spike.json",
+      "timestamp": "2026-07-26T15:31:30Z",
+      "summary": "[alert] cpu_percent=92 memory_percent=88 disk_percent=67 host=checkout-host-01 load_average_1m=12.5 load_average_5m=8.3 load_average_15m=5.1"
+    }
+  ],
+  "event_count": 3,
+  "probable_root_cause": "Database connection pool exhaustion on checkout-service causing cascading latency increases.",
+  "evidence": [
+    {
+      "metric": "latency_ms",
+      "value": 1200,
+      "source": "inbox/alert_api_latency.json",
+      "timestamp": "2026-07-26T15:30:00Z"
+    },
+    {
+      "metric": "error_rate",
+      "value": 8.5,
+      "source": "inbox/alert_api_latency.json",
+      "timestamp": "2026-07-26T15:30:00Z"
+    },
+    {
+      "metric": "db_connections",
+      "value": 95,
+      "source": "inbox/alert_db_pool.json",
+      "timestamp": "2026-07-26T15:31:00Z"
+    },
+    {
+      "metric": "cpu_percent",
+      "value": 92,
+      "source": "inbox/alert_cpu_spike.json",
+      "timestamp": "2026-07-26T15:31:30Z"
+    },
+    {
+      "metric": "memory_percent",
+      "value": 88,
+      "source": "inbox/alert_cpu_spike.json",
+      "timestamp": "2026-07-26T15:31:30Z"
+    },
+    {
+      "metric": "disk_percent",
+      "value": 67,
+      "source": "inbox/alert_cpu_spike.json",
+      "timestamp": "2026-07-26T15:31:30Z"
+    }
+  ],
+  "recommended_action": "Scale database connection pool for checkout-service.",
+  "auto_fix_command": "docker restart checkout-service-01",
+  "manual_fix_command": "Scale database connection pool for checkout-service.",
+  "score": 4,
+  "auto_remediate": true,
+  "remediation_status": "execution_failed",
+  "requires_human_approval": true,
+  "autonomy_level": 3,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": {
+    "allowed": true,
+    "decision": "allowed",
+    "policy_id": "policy-default",
+    "reason": "Action 'docker' on 'checkout-service' allowed by default policy.",
+    "requires_human_approval": false,
+    "dry_run": false,
+    "safeguards_checked": true
+  }
+}

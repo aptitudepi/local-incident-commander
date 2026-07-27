@@ -1,0 +1,169 @@
+services:
+  checkout-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/checkout_service.py
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/payment_service.py
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/auth_service.py
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/inventory_service.py
+    ports:
+      - "5004:5004"
+    environment:
+      - PORT=5004
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/notification_service.py
+    ports:
+      - "5005:5005"
+    environment:
+      - PORT=5005
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python services/api_gateway.py
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+    depends_on:
+      - checkout-service
+      - payment-service
+      - auth-service
+      - inventory-service
+      - notification-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: streamlit run dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./reports:/app/reports
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - lic-demo
+
+  vllm-server:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - /home/dell/repos/Qwen3.6-35B-A3B-NVFP4:/model
+    command: >
+      --model /model
+      --host 0.0.0.0
+      --port 8000
+      --tensor-parallel-size 1
+      --trust-remote-code
+      --kv-cache-dtype fp8
+      --attention-backend flashinfer
+      --moe-backend marlin
+      --gpu-memory-utilization 0.4
+      --max-model-len 262144
+      --max-num-seqs 4
+      --max-num-batched-tokens 8192
+      --enable-chunked-prefill
+      --async-scheduling
+      --enable-prefix-caching
+      --speculative-config '{"method":"mtp","num_speculative_tokens":3,"moe_backend":"triton"}'
+      --load-format fastsafetensors
+      --reasoning-parser qwen3
+      --tool-call-parser qwen3_xml
+      --enable-auto-tool-choice
+      --served-model-name qwen
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - lic-demo
+
+networks:
+  lic-demo:
+    driver: bridge

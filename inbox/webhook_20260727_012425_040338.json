@@ -1,0 +1,1 @@
+{"service": "inventory-service", "event_type": "alert", "severity": "medium", "timestamp": "2026-07-27T01:24:21Z", "payload": {"cpu_percent": 94, "memory_mb": 2800, "disk_iops": 4200, "thread_count": 89, "gc_pause_ms": 1200}, "summary": "CPU at 94% \u2014 background job consuming resources"}

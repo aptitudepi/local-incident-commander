@@ -1,0 +1,14 @@
+{
+  "incident_id": "INC-A5897111",
+  "service": "auth-service",
+  "severity": "Critical",
+  "status": "blocked_by_safeguards",
+  "score": -1,
+  "auto_remediate": false,
+  "auto_fix": "docker restart auth-service-01",
+  "manual_fix": "Isolate auth-service container, block originating IPs, investigate auth logs.",
+  "root_cause": "Suspicious access pattern detected on auth-service. Possible brute force attack.",
+  "timestamp": "2026-07-27T01:25:33.895592+00:00",
+  "remediation_status": "blocked_by_safeguards",
+  "policy_decision": null
+}

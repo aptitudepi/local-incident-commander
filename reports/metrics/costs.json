@@ -1,0 +1,28 @@
+{
+  "total_events_processed": 16,
+  "total_incidents_resolved": 0,
+  "total_actions_blocked": 2,
+  "cloud_api_calls_avoided": 16,
+  "splunk_cost_saved": 0.8,
+  "pagerduty_cost_saved": 0.0,
+  "cloud_api_cost_saved": 1.6,
+  "engineer_hours_saved": 0.0,
+  "mttr_saved_minutes": 0.0,
+  "downtime_cost_saved": 0.0,
+  "annual_projected_savings": 28.8,
+  "total_saved": 2.4,
+  "blocked_actions": [
+    {
+      "action": "rollback",
+      "policy_id": "policy-ac23",
+      "reason": "Action 'rollback' on 'checkout-service' requires human approval at autonomy level 3. Score=-10.",
+      "timestamp": "2026-07-27T01:27:00.909721+00:00"
+    },
+    {
+      "action": "rollback",
+      "policy_id": "policy-67f9",
+      "reason": "Action 'rollback' on 'checkout-service' requires human approval at autonomy level 3. Score=-10.",
+      "timestamp": "2026-07-27T01:30:46.155156+00:00"
+    }
+  ]
+}

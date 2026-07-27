@@ -1,0 +1,29 @@
+{
+  "incident_id": "INC-A5897111",
+  "service": "auth-service",
+  "severity": "Critical",
+  "status": "open",
+  "timestamp": "2026-07-27T01:25:33.895592+00:00",
+  "correlated_events": [
+    {
+      "event_type": "alert",
+      "source": "inbox/ssh_brute_force.json",
+      "timestamp": "2026-07-26T15:32:00Z",
+      "summary": "[alert] attempt_count=150 source_ips=['203.0.113.42', '198.51.100.77', '192.0.2.156'] target_users=['admin', 'root', 'deploy'] protocol=ssh window_seconds=10 is_brute_force=True successful_logins=0"
+    }
+  ],
+  "event_count": 1,
+  "probable_root_cause": "Suspicious access pattern detected on auth-service. Possible brute force attack.",
+  "evidence": [],
+  "recommended_action": "Isolate auth-service container, block originating IPs, investigate auth logs.",
+  "auto_fix_command": "docker restart auth-service-01",
+  "manual_fix_command": "Isolate auth-service container, block originating IPs, investigate auth logs.",
+  "score": -1,
+  "auto_remediate": false,
+  "remediation_status": "blocked_by_safeguards",
+  "requires_human_approval": true,
+  "autonomy_level": 2,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": null
+}

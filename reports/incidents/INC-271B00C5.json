@@ -1,0 +1,29 @@
+{
+  "incident_id": "INC-271B00C5",
+  "service": "unknown",
+  "severity": "Medium",
+  "status": "open",
+  "timestamp": "2026-07-27T01:25:13.649669+00:00",
+  "correlated_events": [
+    {
+      "event_type": "deploy",
+      "source": "inbox/deploy_log.txt",
+      "timestamp": "2026-07-26T15:25:00Z",
+      "summary": "[deploy] deploy_info=service=checkout-service version=v2.3.1 commit=a1b2c3d4e5 deployed_by=ci-cd-pipeline environment=production deployment_strategy=rolling-update replicas=4 previous_version=v2.3.0 change_log=Updated checkout flow, upgraded payment SDK, bumped connection pool settings"
+    }
+  ],
+  "event_count": 1,
+  "probable_root_cause": "No obvious root cause identified for unknown anomalies.",
+  "evidence": [],
+  "recommended_action": "Roll back deployment on unknown and monitor.",
+  "auto_fix_command": "docker restart unknown-01",
+  "manual_fix_command": "Roll back deployment on unknown and monitor.",
+  "score": 4,
+  "auto_remediate": true,
+  "remediation_status": "blocked_by_safeguards",
+  "requires_human_approval": false,
+  "autonomy_level": 2,
+  "escalated": false,
+  "ticket_id": null,
+  "policy_decision": null
+}

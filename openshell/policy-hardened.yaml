@@ -1,0 +1,51 @@
+version: "1.0"
+name: "lic-hardened"
+description: "Hardened sandbox policy for Local Incident Commander"
+
+sandbox:
+  filesystem:
+    read_only:
+      - /home/dell/repos/local-incident-commander/inbox
+      - /home/dell/repos/local-incident-commander/sample_data
+      - /home/dell/repos/local-incident-commander/config.yaml
+    read_write:
+      - /home/dell/repos/local-incident-commander/reports
+      - /home/dell/repos/local-incident-commander/runbooks
+    denied:
+      - /etc
+      - /var
+      - /proc
+      - /sys
+
+  network:
+    default_deny: true
+    allowed_egress: []
+    allowed_ingress:
+      - host: "127.0.0.1"
+        port: 5514
+        protocol: udp
+      - host: "127.0.0.1"
+        port: 8080
+        protocol: tcp
+      - host: "127.0.0.1"
+        port: 8501
+        protocol: tcp
+
+  process:
+    run_as_user: "nobody"
+    run_as_group: "nogroup"
+    allowed_binaries:
+      - /usr/bin/python3
+      - /usr/bin/docker
+      - /usr/bin/curl
+      - /bin/sh
+    denied_binaries:
+      - /usr/bin/rm
+      - /usr/bin/dd
+      - /usr/bin/mkfs
+      - /usr/bin/fdisk
+
+  inference:
+    routing_endpoint: http://localhost:8000/v1
+    allowed_models:
+      - qwen

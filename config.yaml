@@ -1,0 +1,114 @@
+# Local Incident Commander Configuration
+# This file is auto-detected on startup. Edit to override defaults.
+
+topology:
+  checkout-service:
+    depends_on:
+      - auth-service
+      - inventory-service
+    port: 5001
+    team: checkout-team
+    autonomy_level: 3
+
+  payment-service:
+    depends_on:
+      - auth-service
+    port: 5002
+    team: payment-team
+    autonomy_level: 3
+
+  auth-service:
+    depends_on: []
+    port: 5003
+    team: security-team
+    autonomy_level: 2
+
+  inventory-service:
+    depends_on: []
+    port: 5004
+    team: backend-team
+    autonomy_level: 3
+
+  notification-service:
+    depends_on: []
+    port: 5005
+    team: backend-team
+    autonomy_level: 3
+
+  api-gateway:
+    depends_on:
+      - checkout-service
+      - payment-service
+      - auth-service
+      - inventory-service
+    port: 5000
+    team: platform-team
+    autonomy_level: 3
+
+model:
+  path: /home/dell/repos/Qwen3.6-35B-A3B-NVFP4
+  endpoint: http://localhost:8000/v1
+  model_name: /home/dell/repos/Qwen3.6-35B-A3B-NVFP4/
+  use_vllm: true
+  trust_remote_code: true
+  max_model_len: 262144
+  gpu_memory_utilization: 0.4
+
+ports:
+  syslog: 5514
+  api: 8080
+  dashboard: 8501
+  vllm: 8000
+
+onboarding:
+  auto_detect: true
+  wizard: true
+  interactive: true
+
+webhooks:
+  jira_url: ""  # Set to your Jira webhook URL for ticket creation
+  slack_url: ""  # Set to your Slack webhook URL for notifications
+  pagerduty_url: ""  # Set to your PagerDuty integration URL
+
+policy:
+  default_profile: hardened
+  profiles:
+    hardened:
+      default_deny_network: true
+      require_human_approval_for:
+        - rollback
+        - restart
+        - isolate
+        - scale
+        - deploy
+    insecure:
+      default_deny_network: false
+      require_human_approval_for: []
+
+auto_remediate:
+  enabled: true
+  score_threshold: 0
+  report_path: reports/incidents/
+
+safeguards:
+  blocklisted_commands:
+    - rm
+    - dd
+    - mkfs
+    - fdisk
+    - format
+    - shutdown
+    - reboot
+    - init
+    - poweroff
+    - halt
+  max_fixes_per_hour: 3
+  rate_limit_seconds: 300
+
+database:
+  type: sqlite
+  path: reports/reports.db
+
+dashboard:
+  refresh_interval_seconds: 2
+  dark_mode: true

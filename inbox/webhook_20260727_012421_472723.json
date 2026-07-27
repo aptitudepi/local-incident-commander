@@ -1,0 +1,1 @@
+{"service": "checkout-service", "event_type": "deploy", "severity": "info", "timestamp": "2026-07-27T01:24:21Z", "payload": {"version": "v2.1.3-rc2", "deployer": "ci-bot", "duration_seconds": 47, "changed_files": ["payment_gateway.py", "checkout_handler.py", "inventory_client.py"], "canary_percent": 100}, "summary": "Deploy v2.1.3-rc2 to checkout-service (100% canary)"}

@@ -1,0 +1,32 @@
+id: restart-service
+name: Restart Service Container
+description: Restarts a Docker container when resource exhaustion is detected
+
+triggers:
+  event_types:
+    - latency
+    - cpu
+    - memory
+    - database
+  services: []
+  severities:
+    - High
+    - Critical
+
+steps:
+  - action: "docker restart {{service}}-01"
+    description: "Restart the service container to clear transient state"
+    safeguards:
+      allowed_commands:
+        - docker
+      requires_approval: true
+    timeout_seconds: 30
+    verification:
+      type: health_check
+      endpoint: "http://localhost:{{port}}/health"
+      expected_status: 200
+
+rollback:
+  description: "If service fails to come online, the restart will be retried once"
+  steps:
+    - action: "docker restart {{service}}-01"

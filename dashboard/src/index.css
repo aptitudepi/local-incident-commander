@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0A0D13;
+  --color-panel: #121722;
+  --color-panel2: #1A2130;
+  --color-line: #232C3D;
+  --color-hi: #E8EDF5;
+  --color-mid: #93A0B4;
+  --color-dim: #5A6678;
+
+  --color-ok: #86C232;
+  --color-active: #4D8DF0;
+
+  --color-crit: #e94560;
+  --color-high: #ff6b35;
+  --color-med: #ffc107;
+  --color-low: #4caf50;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--color-bg);
+    color: var(--color-hi);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { height: 100%; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-dim); }
+}
+
+@utility font-mono {
+  font-family: ui-monospace, "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+@utility card-shadow {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 14px -4px rgba(0, 0, 0, 0.55), 0 18px 40px -18px rgba(0, 0, 0, 0.6);
+}

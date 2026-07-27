@@ -1,0 +1,30 @@
+id: clear-cache
+name: Clear Application Cache
+description: Clears in-memory cache when memory usage is critically high
+
+triggers:
+  event_types:
+    - memory
+  services: []
+  severities:
+    - High
+    - Critical
+
+steps:
+  - action: "curl -X POST http://localhost:{{port}}/clear-cache"
+    description: "Send cache-clear signal to service HTTP endpoint"
+    safeguards:
+      allowed_commands:
+        - curl
+      requires_approval: true
+    timeout_seconds: 10
+    verification:
+      type: metric
+      metric: memory_percent
+      expected_operator: less_than
+      expected_value: 70
+
+rollback:
+  description: "Cache clear is reversible by restarting the service"
+  steps:
+    - action: "docker restart {{service}}-01"
